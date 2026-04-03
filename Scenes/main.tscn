@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://b5ki6agcsjj53"]
+
+[ext_resource type="Script" uid="uid://bmkytjo4gs7t6" path="res://Scripts/main.gd" id="1_8gbba"]
+[ext_resource type="Texture2D" uid="uid://bjdt6t8vmehri" path="res://Assets/icon.svg" id="1_jjgbg"]
+[ext_resource type="PackedScene" uid="uid://eng3lbdany3g" path="res://Scenes/player.tscn" id="2_bo1nx"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7dm0k"]
+sky_top_color = Color(0.2574, 0.5504399, 0.99, 1)
+sky_horizon_color = Color(0.37259996, 0.49426997, 0.69, 1)
+ground_bottom_color = Color(0.13676184, 0.3114434, 0.16040564, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_ig7tw"]
+sky_material = SubResource("ProceduralSkyMaterial_7dm0k")
+
+[sub_resource type="Environment" id="Environment_0xm2m"]
+background_mode = 2
+sky = SubResource("Sky_ig7tw")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bo1nx"]
+albedo_texture = ExtResource("1_jjgbg")
+uv1_triplanar = true
+
+[node name="world" type="Node3D" unique_id=934551039]
+script = ExtResource("1_8gbba")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1196176541]
+environment = SubResource("Environment_0xm2m")
+
+[node name="sun" type="DirectionalLight3D" parent="." unique_id=1898909269]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
+[node name="floor" type="CSGBox3D" parent="." unique_id=1291241128]
+use_collision = true
+size = Vector3(20, 1, 20)
+material = SubResource("StandardMaterial3D_bo1nx")
+
+[node name="player" parent="." unique_id=230490197 instance=ExtResource("2_bo1nx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
