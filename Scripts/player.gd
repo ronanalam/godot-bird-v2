@@ -28,7 +28,7 @@ const jump_strength: float = 15.0
 const MASS: float = 0.450 # kg
 const ONE_WINGED_AREA: float = (0.925/2.0) * 0.2 # m^2
 const TAIL_AREA: float = 0.025 # m^2 (approx)
-const beta: float = 0.6
+const beta: float = 0.1
 
 ### Physics vars
 var acceleration: Vector3
@@ -55,7 +55,7 @@ var alpha: Vector3
 var ω: Vector3
 var I: Basis = Basis(
 	Vector3(0.1, 0, 0),
-	Vector3(0, 1, 0),
+	Vector3(0, 0.1, 0),
 	Vector3(0, 0, 0.1)
 )
 var torque_input: Vector3
@@ -130,12 +130,12 @@ func _physics_process(dt: float) -> void:
 	
 	### Determine forces
 	F_gravity = MASS * get_gravity()
-	F_jump = 150. * float(pressedJump) * basis.y.normalized()
+	F_jump = 150. * float(pressedJump) * Vector3(0,2,-1).normalized() #basis.y.normalized()
 	
 	# Flight forces
-	var vel_across_wing = velocity.dot(basis.z) * basis.z
-	var C_L = 14.0
-	var C_D = 0.2
+	var vel_across_wing: Vector3 = velocity.dot(basis.z) * basis.z
+	var C_L: float = 1.5
+	var C_D: float = 0.2
 	F_liftLeft = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * ONE_WINGED_AREA
 	F_liftRght = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * ONE_WINGED_AREA
 	F_liftTail = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * TAIL_AREA
@@ -148,7 +148,7 @@ func _physics_process(dt: float) -> void:
 	F_Rght = F_liftRght + F_dragRght
 	F_Tail = F_liftTail + F_dragTail
 	
-	F_dragBasic = -beta * velocity.dot(velocity) * velocity.normalized()
+	F_dragBasic = beta * velocity.dot(velocity) * -velocity.normalized()
 	F_aero = F_Left + F_Rght + F_Tail + F_dragBasic
 	
 	### When on floor (walking)
@@ -160,6 +160,7 @@ func _physics_process(dt: float) -> void:
 		F_run_friction = -5 * velocity
 		# Set torques/rotations to zero
 		torque = Vector3.ZERO
+		torque_aero = Vector3.ZERO
 		alpha = Vector3.ZERO
 		ω = Vector3.ZERO
 		if direction:
@@ -171,7 +172,7 @@ func _physics_process(dt: float) -> void:
 		F_run_friction = Vector3.ZERO
 		
 		torque_input = -Vector3(inputWS, inputQE, inputAD) * basis.inverse()
-		torque_drag = (-0.75)*torque
+		torque_drag += (-0.2)*torque
 		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [wingL.position, wingR.position, tail.position]) # Make sure the two input arrays are the same length!
 		torque = torque_input + torque_aero + torque_drag
 	
