@@ -48,6 +48,7 @@ var F_Left: Vector3
 var F_Rght: Vector3
 var F_Tail: Vector3
 var F_aero: Vector3
+var AoA: float = 30
 var rho: float = 1.225 # kg m^-3 #TODO: Altitude-dependent density
 # Torques/rotations
 var torque: Vector3
@@ -69,6 +70,8 @@ var inputQE: float
 var inputWS: float
 var inputAD: float
 var direction: Vector3
+
+var input_up_down: float
 
 
 
@@ -113,11 +116,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 
 func _physics_process(dt: float) -> void:
+	
 	### Camera Movement
 	camera_arm_endpoint.translate_object_local( Vector3.BACK * camera_arm.spring_length )
 	player_camera.position = player_camera.position.lerp( camera_arm_endpoint.position, dt * CAMERA_LERP )
 	# Reattach head position to body
 	head.position = position
+	
+	
 	
 	### Grab player input
 	input2D = Input.get_vector('left', 'right', 'forward', 'back')
@@ -127,29 +133,38 @@ func _physics_process(dt: float) -> void:
 	pressedJump = Input.is_action_just_pressed('jump')
 	direction = Vector3(input2D.x, 0, input2D.y).normalized()
 	
+	input_up_down = Input.get_axis('pitch_wingR_down', 'pitch_wingR_up')
+	
+	
 	
 	### Determine forces
 	F_gravity = MASS * get_gravity()
 	F_jump = 150. * float(pressedJump) * Vector3(0,2,-1).normalized() #basis.y.normalized()
 	
 	# Flight forces
-	var vel_across_wing: Vector3 = velocity.dot(basis.z) * basis.z
-	var C_L: float = 1.5
+	var vel_across_wingL: Vector3 = velocity.dot(wingL.basis.z) * wingL.basis.y
+	var vel_across_wingR: Vector3 = velocity.dot(wingR.basis.z) * wingR.basis.y
+	var vel_across_tail: Vector3 = velocity.dot(tail.basis.z) * tail.basis.y
+	
+	var C_L: float = 1.0
 	var C_D: float = 0.2
-	F_liftLeft = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftRght = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftTail = basis.y.normalized() * rho/2 * vel_across_wing.length_squared() * C_L * TAIL_AREA
+	F_liftLeft = basis.y.normalized() * rho * 0.5 * vel_across_wingL.length_squared() * C_L * ONE_WINGED_AREA
+	F_liftRght = basis.y.normalized() * rho * 0.5 * vel_across_wingR.length_squared() * C_L * ONE_WINGED_AREA
+	F_liftTail = basis.y.normalized() * rho * 0.5 * vel_across_tail.length_squared() * C_L * TAIL_AREA
 
-	F_dragLeft = basis.z.normalized() * rho/2 * vel_across_wing.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragRght = basis.z.normalized() * rho/2 * vel_across_wing.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragTail = basis.z.normalized() * rho/2 * vel_across_wing.length_squared() * C_D * TAIL_AREA
+	F_dragLeft = basis.z.normalized() * rho * 0.5 * vel_across_wingL.length_squared() * C_D * ONE_WINGED_AREA
+	F_dragRght = basis.z.normalized() * rho * 0.5 * vel_across_wingR.length_squared() * C_D * ONE_WINGED_AREA
+	F_dragTail = basis.z.normalized() * rho * 0.5 * vel_across_tail.length_squared() * C_D * TAIL_AREA
 	
 	F_Left = F_liftLeft + F_dragLeft
 	F_Rght = F_liftRght + F_dragRght
 	F_Tail = F_liftTail + F_dragTail
 	
 	F_dragBasic = beta * velocity.dot(velocity) * -velocity.normalized()
+	
 	F_aero = F_Left + F_Rght + F_Tail + F_dragBasic
+	
+	
 	
 	### When on floor (walking)
 	if is_on_floor():
@@ -159,12 +174,17 @@ func _physics_process(dt: float) -> void:
 		F_run = 9 * direction * quaternion.inverse()
 		F_run_friction = -5 * velocity
 		# Set torques/rotations to zero
+		# TODO: IF YOU LAND WHILE HOLDING TORQUE YOU WILL SPIN THE OPPOSITE WAY WHEN YOU NEXT TAKE TO THE AIR
 		torque = Vector3.ZERO
+		torque_input = Vector3.ZERO
 		torque_aero = Vector3.ZERO
+		torque_drag = Vector3.ZERO
 		alpha = Vector3.ZERO
 		ω = Vector3.ZERO
 		if direction:
 			quaternion = Quaternion.IDENTITY
+	
+	
 	
 	### When not on floor (flying)
 	else:
@@ -175,6 +195,10 @@ func _physics_process(dt: float) -> void:
 		torque_drag += (-0.2)*torque
 		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [wingL.position, wingR.position, tail.position]) # Make sure the two input arrays are the same length!
 		torque = torque_input + torque_aero + torque_drag
+		
+		
+		wingR.rotate_x(input_up_down/TAU)
+	
 	
 	
 	### Process player movement
@@ -188,13 +212,17 @@ func _physics_process(dt: float) -> void:
 	else:
 		quaternion = Quaternion(ω.normalized(), ω.length() * dt) * quaternion
 	
-	
 	move_and_slide()
 	
 	
-	### DEBUG ----------------------------------------
+	
+	
+	### --------------------------
+	### --------------DEBUGGING---
+	### --------------------------
+	
 	## Drive label text
-	label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4)
+	label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4) + str('\nvel_across_wingL: ') + String.num(vel_across_wingL.length(), 4)
 	label.font_size = 36
 	label.pixel_size = 0.001
 	
@@ -209,7 +237,7 @@ func _physics_process(dt: float) -> void:
 	
 	# Velocity
 	DebugDraw3D.draw_arrow_ray(position, velocity, velocity.length(), Color.ORANGE, false)
-	DebugDraw3D.draw_arrow_ray(position, vel_across_wing, vel_across_wing.length(), Color.HOT_PINK, false)
+	DebugDraw3D.draw_arrow_ray(position, vel_across_wingL, vel_across_wingL.length(), Color.HOT_PINK, false)
 	
 	# Wing forces
 	DebugDraw3D.draw_arrow_ray(wingL.global_position, F_liftLeft, F_liftLeft.length(), Color.WHITE, false)
@@ -227,7 +255,7 @@ func _physics_process(dt: float) -> void:
 
 
 func torque_from_forces(_forces: Array, _force_origins: Array) -> Vector3:
-	var _torque: Vector3
+	var _torque: Vector3 = Vector3.ZERO
 	
 	for i in range(len(_forces)):
 		_torque += _force_origins[i].cross(_forces[i])

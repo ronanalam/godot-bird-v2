@@ -1,7 +1,10 @@
 [gd_scene format=3 uid="uid://eng3lbdany3g"]
 
 [ext_resource type="Script" uid="uid://onsxahbqve30" path="res://Scripts/player.gd" id="1_v0iea"]
-[ext_resource type="ArrayMesh" uid="uid://dovphcmsrifo6" path="res://Assets/crowcopy.obj" id="2_cvnsp"]
+[ext_resource type="ArrayMesh" uid="uid://babcxqoovwgn5" path="res://Assets/crow_body_stripped.obj" id="2_fkybt"]
+[ext_resource type="ArrayMesh" uid="uid://5rb674tiftao" path="res://Assets/crow_wingL.obj" id="3_x3wgy"]
+[ext_resource type="ArrayMesh" uid="uid://tllt31x7jc16" path="res://Assets/crow_wingR.obj" id="4_3smsa"]
+[ext_resource type="ArrayMesh" uid="uid://bw5klp05hhcr0" path="res://Assets/crow_tail.obj" id="5_8erm5"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cvnsp"]
 albedo_color = Color(0, 0, 0, 1)
@@ -27,19 +30,33 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
 
 [node name="body" type="Node3D" parent="." unique_id=683595002]
 
-[node name="mesh" type="MeshInstance3D" parent="body" unique_id=1170911739]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.175, 0)
-mesh = ExtResource("2_cvnsp")
+[node name="mesh_body_stripped" type="MeshInstance3D" parent="body" unique_id=1170911739]
+mesh = ExtResource("2_fkybt")
 surface_material_override/0 = SubResource("StandardMaterial3D_cvnsp")
 
 [node name="wingL" type="Node3D" parent="body" unique_id=279921802]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.05, 0.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.05, 0.05)
+
+[node name="mesh_wingL" type="MeshInstance3D" parent="body/wingL" unique_id=195188714]
+mesh = ExtResource("3_x3wgy")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_cvnsp")
 
 [node name="wingR" type="Node3D" parent="body" unique_id=1949584682]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.05, 0.05)
+transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, 0.25, 0.05, 0.05)
+
+[node name="mesh_wingR" type="MeshInstance3D" parent="body/wingR" unique_id=2049621845]
+mesh = ExtResource("4_3smsa")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_cvnsp")
 
 [node name="tail" type="Node3D" parent="body" unique_id=1193498947]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0.18)
+
+[node name="mesh_tail" type="MeshInstance3D" parent="body/tail" unique_id=334320269]
+mesh = ExtResource("5_8erm5")
+skeleton = NodePath("../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_cvnsp")
 
 [node name="player_hitbox" type="CollisionShape3D" parent="." unique_id=412660555]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.05)

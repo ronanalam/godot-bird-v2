@@ -12,15 +12,23 @@ extends Node3D
 func _physics_process(dt: float) -> void:
 	
 	
-	var chunk_size = 16.0
+	var chunk_size: float = 80.0
+	var current_chunk: Vector2 = Vector2( player.position.x/chunk_size, player.position.y/chunk_size).floor()
+	var render_radius: float = 80.
 	
-	var r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), fmod(player.position.y, chunk_size), fmod(player.position.z, chunk_size))
+	var r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
+									fmod(player.position.y, chunk_size), 
+									fmod(player.position.z, chunk_size));
 	
-	if 16*floor(player.position/16) == floor(player.position):
-		pass
-	
+	#if = floor(player.position)/16:
+		#pass;
 	
 	if abs(player.position.x - ground.position.x) > ground.size.x/2:
-		ground.set_position(Vector3(player.position.x + ground.size.x/2, ground.position.y, ground.position.z))
+		ground.set_position(Vector3(player.position.x + ground.size.x/2, 
+							ground.position.y, 
+							ground.position.z))
+	
 	if abs(player.position.z - ground.position.z) > ground.size.z/2:
-		ground.set_position( Vector3(ground.position.x, ground.position.y, player.position.z + ground.size.y/2) )
+		ground.set_position( Vector3(ground.position.x, 
+									ground.position.y, 
+									player.position.z + ground.size.y/2) )
