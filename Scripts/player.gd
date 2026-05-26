@@ -17,6 +17,8 @@ const camera_arm_step: float = 0.25
 
 ### Menu variables
 var inMenu: bool = false
+var is_debug_text_enabled: bool = true
+var cycle_debug_arrows: int = 2
 
 ### Lerp Parameters
 const MOUSE_SENS: float = 0.35
@@ -112,6 +114,35 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 		inMenu = !inMenu
+		
+	### Handle toggle hotkeys of debug visibility
+	if event.is_action_pressed('toggle_debug_text'):
+		if inMenu:
+			pass
+		else:
+			is_debug_text_enabled = !is_debug_text_enabled
+	if event.is_action_pressed('cycle_debug_arrows'):
+		if inMenu:
+			pass
+		else:
+			cycle_debug_arrows += 1
+			cycle_debug_arrows = cycle_debug_arrows % 3
+	
+
+
+
+#func _process(dt: float) -> void:
+	#
+	## Calculates which quadrant of the world our head is facing
+	#match floor( fmod(head.rotation.y+PI/4, TAU) * (2/PI) ):
+		#0.: # Quadrant I
+			#print('i')
+		#1.: # Quadrant II
+			#print("ii")
+		#2.: # Quadrant III
+			#print("iii")
+		#3.: # Quadrant IV
+			#print("iv")
 
 
 
@@ -139,22 +170,22 @@ func _physics_process(dt: float) -> void:
 	
 	### Determine forces
 	F_gravity = MASS * get_gravity()
-	F_jump = 150. * float(pressedJump) * Vector3(0,2,-1).normalized() #basis.y.normalized()
+	F_jump = 150. * float(pressedJump) * ( basis * Vector3(0,2,-1).normalized() ) #basis.y.normalized()
 	
 	# Flight forces
-	var vel_across_wingL: Vector3 = velocity.dot(wingL.basis.z) * wingL.basis.y
-	var vel_across_wingR: Vector3 = velocity.dot(wingR.basis.z) * wingR.basis.y
-	var vel_across_tail: Vector3 = velocity.dot(tail.basis.z) * tail.basis.y
+	var vel_across_wingL: Vector3 = velocity.dot(-wingL.basis.z) * wingL.basis.z
+	var vel_across_wingR: Vector3 = velocity.dot(-wingR.basis.z) * wingR.basis.z
+	var vel_across_tail: Vector3 = velocity.dot(-tail.basis.z) * tail.basis.z
 	
-	var C_L: float = 1.0
+	var C_L: float = 1.6
 	var C_D: float = 0.2
-	F_liftLeft = basis.y.normalized() * rho * 0.5 * vel_across_wingL.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftRght = basis.y.normalized() * rho * 0.5 * vel_across_wingR.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftTail = basis.y.normalized() * rho * 0.5 * vel_across_tail.length_squared() * C_L * TAIL_AREA
+	F_liftLeft = wingL.basis.y * rho * 0.5 * vel_across_wingL.length_squared() * C_L * ONE_WINGED_AREA
+	F_liftRght = wingR.basis.y * rho * 0.5 * vel_across_wingR.length_squared() * C_L * ONE_WINGED_AREA
+	F_liftTail = tail.basis.y * rho * 0.5 * vel_across_tail.length_squared() * C_L * TAIL_AREA
 
-	F_dragLeft = basis.z.normalized() * rho * 0.5 * vel_across_wingL.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragRght = basis.z.normalized() * rho * 0.5 * vel_across_wingR.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragTail = basis.z.normalized() * rho * 0.5 * vel_across_tail.length_squared() * C_D * TAIL_AREA
+	F_dragLeft = wingL.basis.z * rho * 0.5 * vel_across_wingL.length_squared() * C_D * ONE_WINGED_AREA
+	F_dragRght = wingR.basis.z * rho * 0.5 * vel_across_wingR.length_squared() * C_D * ONE_WINGED_AREA
+	F_dragTail = tail.basis.z * rho * 0.5 * vel_across_tail.length_squared() * C_D * TAIL_AREA
 	
 	F_Left = F_liftLeft + F_dragLeft
 	F_Rght = F_liftRght + F_dragRght
@@ -195,10 +226,10 @@ func _physics_process(dt: float) -> void:
 		torque_drag += (-0.2)*torque
 		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [wingL.position, wingR.position, tail.position]) # Make sure the two input arrays are the same length!
 		torque = torque_input + torque_aero + torque_drag
-		
-		
-		wingR.rotate_x(input_up_down/TAU)
 	
+	wingR.rotate_x(input_up_down/(2*TAU))
+	#wingL.rotate_x(-inputWS/TAU)
+	wingL.rotate_x(input_up_down/(2*TAU))
 	
 	
 	### Process player movement
@@ -210,7 +241,7 @@ func _physics_process(dt: float) -> void:
 	if ω.is_zero_approx():
 		quaternion = Quaternion.IDENTITY * quaternion
 	else:
-		quaternion = Quaternion(ω.normalized(), ω.length() * dt) * quaternion
+		quaternion = Quaternion(ω.normalized(), TAU * ω.length() * dt) * quaternion # Added a factor of TAU
 	
 	move_and_slide()
 	
@@ -218,38 +249,85 @@ func _physics_process(dt: float) -> void:
 	
 	
 	### --------------------------
-	### --------------DEBUGGING---
+	###   ---    DEBUGGING    ---
 	### --------------------------
 	
 	## Drive label text
-	label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4) + str('\nvel_across_wingL: ') + String.num(vel_across_wingL.length(), 4)
-	label.font_size = 36
-	label.pixel_size = 0.001
+	if is_debug_text_enabled:
+		label.visible = true
+		label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4) + str('\nvel_across_wingL: ') + String.num(vel_across_wingL.length(), 4)
+		label.font_size = 36
+		label.pixel_size = 0.001
+	else:
+		label.visible = false
+	
 	
 	## Debug arrows
-	# Body basis
-	DebugDraw3D.draw_arrow_ray(position, basis.x, 0.2, Color.RED, false)
-	DebugDraw3D.draw_arrow_ray(position, basis.y, 0.2, Color.GREEN, false)
-	DebugDraw3D.draw_arrow_ray(position, basis.z, 0.2, Color.BLUE, false)
+	# int cycle_debug_arrows is an element of {0,1,2}
+	match cycle_debug_arrows:
+		2:
+			# Draw only the body basis
+			# Body basis
+			DebugDraw3D.draw_arrow_ray(position, basis.x, 0.2, Color.RED, false)
+			DebugDraw3D.draw_arrow_ray(position, basis.y, 0.2, Color.GREEN, false)
+			DebugDraw3D.draw_arrow_ray(position, basis.z, 0.2, Color.BLUE, false)
+			#print('2')
+		1:
+			# Draw all arrows
+			# Body basis
+			DebugDraw3D.draw_arrow_ray(position, basis.x, 0.2, Color.RED, false)
+			DebugDraw3D.draw_arrow_ray(position, basis.y, 0.2, Color.GREEN, false)
+			DebugDraw3D.draw_arrow_ray(position, basis.z, 0.2, Color.BLUE, false)
 	
-	# Input/run direction (Vec3 direction)
-	DebugDraw3D.draw_arrow_ray(position, direction, 0.5, Color.BLACK, false)
+			# Input/run direction (Vec3 direction)
+			DebugDraw3D.draw_arrow_ray(position, direction, 0.5, Color.BLACK, false)
 	
-	# Velocity
-	DebugDraw3D.draw_arrow_ray(position, velocity, velocity.length(), Color.ORANGE, false)
-	DebugDraw3D.draw_arrow_ray(position, vel_across_wingL, vel_across_wingL.length(), Color.HOT_PINK, false)
+			# Velocity
+			DebugDraw3D.draw_arrow_ray(position, velocity, velocity.length(), Color.ORANGE, false)
+			DebugDraw3D.draw_arrow_ray(position, vel_across_wingL, vel_across_wingL.length(), Color.HOT_PINK, false)
 	
-	# Wing forces
-	DebugDraw3D.draw_arrow_ray(wingL.global_position, F_liftLeft, F_liftLeft.length(), Color.WHITE, false)
-	DebugDraw3D.draw_arrow_ray(wingR.global_position, F_liftRght, F_liftRght.length(), Color.WHITE, false)
-	DebugDraw3D.draw_arrow_ray(tail.global_position, F_liftTail, F_liftTail.length(), Color.WHITE, false)
-	DebugDraw3D.draw_arrow_ray(wingL.global_position, F_dragLeft, F_dragLeft.length(), Color.BLACK, false)
-	DebugDraw3D.draw_arrow_ray(wingR.global_position, F_dragRght, F_dragRght.length(), Color.BLACK, false)
-	DebugDraw3D.draw_arrow_ray(tail.global_position, F_dragTail, F_dragTail.length(), Color.BLACK, false)
+			# Wing forces
+			DebugDraw3D.draw_arrow_ray(wingL.global_position, F_liftLeft, F_liftLeft.length(), Color.WHITE, false)
+			DebugDraw3D.draw_arrow_ray(wingR.global_position, F_liftRght, F_liftRght.length(), Color.WHITE, false)
+			DebugDraw3D.draw_arrow_ray(tail.global_position, F_liftTail, F_liftTail.length(), Color.WHITE, false)
+			DebugDraw3D.draw_arrow_ray(wingL.global_position, F_dragLeft, F_dragLeft.length(), Color.BLACK, false)
+			DebugDraw3D.draw_arrow_ray(wingR.global_position, F_dragRght, F_dragRght.length(), Color.BLACK, false)
+			DebugDraw3D.draw_arrow_ray(tail.global_position, F_dragTail, F_dragTail.length(), Color.BLACK, false)
 	
-	# Wing torques/rotations
-	DebugDraw3D.draw_arrow_ray(position, torque, torque.length(), Color.DARK_VIOLET, false)
-	#DebugDraw3D.draw_arrow_ray(position, ω, ω.length(), Color.DEEP_PINK, false)
+			# Wing torques/rotations
+			DebugDraw3D.draw_arrow_ray(position, torque, torque.length(), Color.DARK_VIOLET, false)
+			#DebugDraw3D.draw_arrow_ray(position, ω, ω.length(), Color.DEEP_PINK, false)
+			#print('1')
+		0:
+			# Render no arrows
+			pass
+			#print('0')
+		_:
+			print("cycle_debug_arrows Error: int is out of the set {0,1,2}")
+	
+	## Body basis
+	#DebugDraw3D.draw_arrow_ray(position, basis.x, 0.2, Color.RED, false)
+	#DebugDraw3D.draw_arrow_ray(position, basis.y, 0.2, Color.GREEN, false)
+	#DebugDraw3D.draw_arrow_ray(position, basis.z, 0.2, Color.BLUE, false)
+	#
+	## Input/run direction (Vec3 direction)
+	#DebugDraw3D.draw_arrow_ray(position, direction, 0.5, Color.BLACK, false)
+	#
+	## Velocity
+	#DebugDraw3D.draw_arrow_ray(position, velocity, velocity.length(), Color.ORANGE, false)
+	#DebugDraw3D.draw_arrow_ray(position, vel_across_wingL, vel_across_wingL.length(), Color.HOT_PINK, false)
+	#
+	## Wing forces
+	#DebugDraw3D.draw_arrow_ray(wingL.global_position, F_liftLeft, F_liftLeft.length(), Color.WHITE, false)
+	#DebugDraw3D.draw_arrow_ray(wingR.global_position, F_liftRght, F_liftRght.length(), Color.WHITE, false)
+	#DebugDraw3D.draw_arrow_ray(tail.global_position, F_liftTail, F_liftTail.length(), Color.WHITE, false)
+	#DebugDraw3D.draw_arrow_ray(wingL.global_position, F_dragLeft, F_dragLeft.length(), Color.BLACK, false)
+	#DebugDraw3D.draw_arrow_ray(wingR.global_position, F_dragRght, F_dragRght.length(), Color.BLACK, false)
+	#DebugDraw3D.draw_arrow_ray(tail.global_position, F_dragTail, F_dragTail.length(), Color.BLACK, false)
+	#
+	## Wing torques/rotations
+	#DebugDraw3D.draw_arrow_ray(position, torque, torque.length(), Color.DARK_VIOLET, false)
+	##DebugDraw3D.draw_arrow_ray(position, ω, ω.length(), Color.DEEP_PINK, false)
 
 
 

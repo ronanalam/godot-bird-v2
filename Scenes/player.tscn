@@ -35,7 +35,7 @@ mesh = ExtResource("2_fkybt")
 surface_material_override/0 = SubResource("StandardMaterial3D_cvnsp")
 
 [node name="wingL" type="Node3D" parent="body" unique_id=279921802]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.05, 0.05)
+transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, -0.25, 0.05, 0.05)
 
 [node name="mesh_wingL" type="MeshInstance3D" parent="body/wingL" unique_id=195188714]
 mesh = ExtResource("3_x3wgy")
