@@ -8,22 +8,33 @@ extends CharacterBody3D
 @onready var wingR: Node3D = $body/wingR
 @onready var tail: Node3D = $body/tail
 
+@onready var mesh_body: MeshInstance3D = $body/mesh_body_stripped
+@onready var mesh_wingL: MeshInstance3D = $body/wingL/mesh_wingL
+@onready var mesh_wingR: MeshInstance3D = $body/wingR/mesh_wingR
+@onready var mesh_tail: MeshInstance3D = $body/tail/mesh_tail
+
+
 ### Camera
 @onready var player_camera: Camera3D = $head/player_camera
 @onready var camera_arm: SpringArm3D = $head/camera_arm
 @onready var camera_arm_endpoint: Marker3D = $head/camera_arm/camera_arm_endpoint
 @onready var label: Label3D = $head/label
+@onready var label_keybinds: Label3D = $head/player_camera/label_keybinds
 const camera_arm_step: float = 0.25
+
 
 ### Menu variables
 var inMenu: bool = false
 var is_debug_text_enabled: bool = true
-var cycle_debug_arrows: int = 2
+var cycle_debug_arrows: int = 3%3
+var cycle_species: int = 2%2
+
 
 ### Lerp Parameters
 const MOUSE_SENS: float = 0.35
 const CAMERA_LERP: float = 5.0
 const BODY_LERP: float = 6.0
+
 
 ### Physics constants
 const jump_strength: float = 15.0
@@ -64,6 +75,7 @@ var I: Basis = Basis(
 var torque_input: Vector3
 var torque_aero: Vector3
 var torque_drag: Vector3
+
 
 ### Gameplay input vars
 var pressedJump: bool
@@ -116,18 +128,25 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		inMenu = !inMenu
 		
 	### Handle toggle hotkeys of debug visibility
-	if event.is_action_pressed('toggle_debug_text'):
+	if event.is_action_pressed("toggle_debug_text"):
 		if inMenu:
 			pass
 		else:
 			is_debug_text_enabled = !is_debug_text_enabled
-	if event.is_action_pressed('cycle_debug_arrows'):
+	if event.is_action_pressed("cycle_debug_arrows"):
 		if inMenu:
 			pass
 		else:
 			cycle_debug_arrows += 1
 			cycle_debug_arrows = cycle_debug_arrows % 3
 	
+	### Handle hotkey to cycle species
+	if event.is_action_pressed("cycle_species"):
+		if inMenu:
+			pass
+		else:
+			cycle_species += 1
+			cycle_species = cycle_species % 2
 
 
 
@@ -165,6 +184,23 @@ func _physics_process(dt: float) -> void:
 	direction = Vector3(input2D.x, 0, input2D.y).normalized()
 	
 	input_up_down = Input.get_axis('pitch_wingR_down', 'pitch_wingR_up')
+	
+	
+	
+	### Species selection
+	match cycle_species:
+		1:
+			mesh_body.mesh = preload("res://Assets/crow_body_stripped.obj")
+			mesh_wingL.mesh = preload("res://Assets/crow_wingL.obj")
+			mesh_wingR.mesh = preload("res://Assets/crow_wingR.obj")
+			mesh_tail.mesh = preload("res://Assets/crow_tail.obj")
+		0:
+			mesh_body.mesh = preload("res://Assets/sandhill_crane_body_flying_stripped.obj")
+			mesh_wingL.mesh = preload("res://Assets/sandhill_crane_wingL.obj")
+			mesh_wingR.mesh = preload("res://Assets/sandhill_crane_wingR.obj")
+			mesh_tail.mesh = preload("res://Assets/sandhill_crane_legs.obj")
+		_:
+			print("cycle_species Error: int is out of the set {0,1}")
 	
 	
 	
@@ -260,6 +296,12 @@ func _physics_process(dt: float) -> void:
 		label.pixel_size = 0.001
 	else:
 		label.visible = false
+		
+	# Label_keybinds shows the current keybinds as text on the screen
+	label_keybinds.text = str("Toggle debug text:  "+"[T]\n"+"Cycle debug arrows:  "+"[G]\n"+"Cycle thru species:  "+"[Q]")
+	label_keybinds.font_size = 36
+	label_keybinds.pixel_size = 0.001
+	label_keybinds.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	
 	
 	## Debug arrows
