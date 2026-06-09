@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://eng3lbdany3g"]
 
 [ext_resource type="Script" uid="uid://onsxahbqve30" path="res://Scripts/player.gd" id="1_v0iea"]
-[ext_resource type="ArrayMesh" uid="uid://babcxqoovwgn5" path="res://Assets/crow_body_stripped.obj" id="2_fkybt"]
-[ext_resource type="ArrayMesh" uid="uid://5rb674tiftao" path="res://Assets/crow_wingL.obj" id="3_x3wgy"]
-[ext_resource type="ArrayMesh" uid="uid://tllt31x7jc16" path="res://Assets/crow_wingR.obj" id="4_3smsa"]
-[ext_resource type="ArrayMesh" uid="uid://bw5klp05hhcr0" path="res://Assets/crow_tail.obj" id="5_8erm5"]
+[ext_resource type="ArrayMesh" uid="uid://ipf0n7dayemb" path="res://Assets/sandhill_crane_body_flying_stripped.obj" id="2_fkybt"]
+[ext_resource type="ArrayMesh" uid="uid://4kq3jni5q6cx" path="res://Assets/sandhill_crane_wingL.obj" id="3_x3wgy"]
+[ext_resource type="ArrayMesh" uid="uid://cys42aah1uf" path="res://Assets/sandhill_crane_wingR.obj" id="4_3smsa"]
+[ext_resource type="ArrayMesh" uid="uid://mnwvo8pjvlj3" path="res://Assets/sandhill_crane_legs.obj" id="5_8erm5"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_6t5aa"]
 size = Vector3(0.15, 0.1, 0.3)
@@ -34,21 +34,21 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 0.6, -1)
 mesh = ExtResource("2_fkybt")
 
 [node name="wingL" type="Node3D" parent="body" unique_id=279921802]
-transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, -0.25, 0.05, 0.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.425, 0.11, 0.075)
 
 [node name="mesh_wingL" type="MeshInstance3D" parent="body/wingL" unique_id=195188714]
 mesh = ExtResource("3_x3wgy")
 skeleton = NodePath("../..")
 
 [node name="wingR" type="Node3D" parent="body" unique_id=1949584682]
-transform = Transform3D(1, 0, 0, 0, 0.8660254, -0.5, 0, 0.5, 0.8660254, 0.25, 0.05, 0.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.425, 0.11, 0.075)
 
 [node name="mesh_wingR" type="MeshInstance3D" parent="body/wingR" unique_id=2049621845]
 mesh = ExtResource("4_3smsa")
 skeleton = NodePath("../..")
 
 [node name="tail" type="Node3D" parent="body" unique_id=1193498947]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0.18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.025, 0.3)
 
 [node name="mesh_tail" type="MeshInstance3D" parent="body/tail" unique_id=334320269]
 mesh = ExtResource("5_8erm5")

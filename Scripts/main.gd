@@ -4,6 +4,8 @@ extends Node3D
 @onready var ground: CSGBox3D = $ground
 
 var chunk_size: float = 80.0
+var view_Xpos: bool = true
+var view_Ypos: bool = true
 
 
 
@@ -14,17 +16,28 @@ func _ready() -> void:
 
 
 
-func _process(dt: float) -> void:
+func _process(_dt: float) -> void:
+	
+	
 	# Calculates which quadrant of the world our head is facing
 	match floor( fmod(player.head.rotation.y+PI/4, TAU) * (2/PI) ):
 		0.: # Quadrant I
-			ground.size = chunk_size * Vector3(1,0,3)
+			#ground.size = chunk_size * Vector3(1,0,3)
+			view_Xpos = true
+			view_Ypos = true
 		1.: # Quadrant II
-			ground.size = chunk_size * Vector3(3,0,1)
+			#ground.size = chunk_size * Vector3(3,0,1)
+			view_Xpos = false
+			view_Ypos = true
 		2.: # Quadrant III
-			ground.size = chunk_size * Vector3(1,0,3)
+			#ground.size = chunk_size * Vector3(1,0,3)
+			view_Xpos = true
+			view_Ypos = true
 		3.: # Quadrant IV
-			ground.size = chunk_size * Vector3(3,0,1)
+			#ground.size = chunk_size * Vector3(3,0,1)
+			view_Xpos = true
+			view_Ypos = true
+	
 
 
 
@@ -32,9 +45,9 @@ func _process(dt: float) -> void:
 func _physics_process(_dt: float) -> void:
 	
 	var current_chunk: Vector3 = (player.position/chunk_size).floor()
-	var render_radius: float = 80.
+	var _render_radius: float = 80.
 	
-	var r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
+	var _r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
 									fmod(player.position.y, chunk_size), 
 									fmod(player.position.z, chunk_size));
 	

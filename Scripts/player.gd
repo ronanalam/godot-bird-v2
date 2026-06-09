@@ -3,10 +3,11 @@ extends CharacterBody3D
 ### Body parts
 @onready var head: Node3D = $head
 @onready var body: Node3D = $body
-@onready var player_hitbox: CollisionShape3D = $player_hitbox
 @onready var wingL: Node3D = $body/wingL
 @onready var wingR: Node3D = $body/wingR
 @onready var tail: Node3D = $body/tail
+
+@onready var player_hitbox: CollisionShape3D = $player_hitbox
 
 @onready var mesh_body: MeshInstance3D = $body/mesh_body_stripped
 @onready var mesh_wingL: MeshInstance3D = $body/wingL/mesh_wingL
@@ -25,9 +26,9 @@ const camera_arm_step: float = 0.25
 
 ### Menu variables
 var inMenu: bool = false
-var is_debug_text_enabled: bool = true
-var cycle_debug_arrows: int = 3%3
-var cycle_species: int = 2%2
+var is_debug_text_enabled: bool = false
+var cycle_debug_arrows: int = 2
+var cycle_species: int = 1
 
 
 ### Lerp Parameters
@@ -37,11 +38,20 @@ const BODY_LERP: float = 6.0
 
 
 ### Physics constants
-const jump_strength: float = 15.0
-const MASS: float = 0.450 # kg
-const ONE_WINGED_AREA: float = (0.925/2.0) * 0.2 # m^2
-const TAIL_AREA: float = 0.025 # m^2 (approx)
+const JUMP_STRENGTH: Array[float] = [150.0, 750.0]
 const beta: float = 0.1
+@onready var curve_aoa_cn = preload("res://Assets/curve_aoa_cn.tres")
+@onready var curve_aoa_ca = preload("res://Assets/curve_aoa_ca.tres")
+
+
+### Species constants
+const MASS: Array[float] = [0.450, 4.3] # kg
+const ONE_WINGED_AREA: Array[float] = [(0.925/2) * 0.2, (2.00/2) * 0.5] # m^2
+const TAIL_AREA: float = 0.025 # m^2 (approx)
+const WINGL_POSITION: Array[Vector3] = [Vector3(-0.25,0.05,0.05), Vector3(-0.425,0.11,0.075)]
+const WINGR_POSITION: Array[Vector3] = [Vector3(0.25,0.05,0.05), Vector3(0.425,0.11,0.075)]
+const TAIL_POSITION: Array[Vector3] = [Vector3(0,0.02,0.18), Vector3(0,-0.025,0.3)]
+
 
 ### Physics vars
 var acceleration: Vector3
@@ -147,6 +157,31 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		else:
 			cycle_species += 1
 			cycle_species = cycle_species % 2
+			init_species( cycle_species )
+
+
+
+### Species selection
+func init_species( _species: int ) -> int:
+	# Set appropriate model offsets
+	wingL.position = WINGL_POSITION[_species]
+	wingR.position = WINGR_POSITION[_species]
+	tail.position = TAIL_POSITION[_species]
+	
+	match _species:
+		0:
+			mesh_body.mesh = preload("res://Assets/crow_body_stripped.obj")
+			mesh_wingL.mesh = preload("res://Assets/crow_wingL.obj")
+			mesh_wingR.mesh = preload("res://Assets/crow_wingR.obj")
+			mesh_tail.mesh = preload("res://Assets/crow_tail.obj")
+		1:
+			mesh_body.mesh = preload("res://Assets/sandhill_crane_body_flying_stripped.obj")
+			mesh_wingL.mesh = preload("res://Assets/sandhill_crane_wingL.obj")
+			mesh_wingR.mesh = preload("res://Assets/sandhill_crane_wingR.obj")
+			mesh_tail.mesh = preload("res://Assets/sandhill_crane_legs.obj")
+		_:
+			print("cycle_species Error: int is out of the set {0,1}")
+	return 0
 
 
 
@@ -187,41 +222,41 @@ func _physics_process(dt: float) -> void:
 	
 	
 	
-	### Species selection
-	match cycle_species:
-		1:
-			mesh_body.mesh = preload("res://Assets/crow_body_stripped.obj")
-			mesh_wingL.mesh = preload("res://Assets/crow_wingL.obj")
-			mesh_wingR.mesh = preload("res://Assets/crow_wingR.obj")
-			mesh_tail.mesh = preload("res://Assets/crow_tail.obj")
-		0:
-			mesh_body.mesh = preload("res://Assets/sandhill_crane_body_flying_stripped.obj")
-			mesh_wingL.mesh = preload("res://Assets/sandhill_crane_wingL.obj")
-			mesh_wingR.mesh = preload("res://Assets/sandhill_crane_wingR.obj")
-			mesh_tail.mesh = preload("res://Assets/sandhill_crane_legs.obj")
-		_:
-			print("cycle_species Error: int is out of the set {0,1}")
-	
-	
-	
 	### Determine forces
-	F_gravity = MASS * get_gravity()
-	F_jump = 150. * float(pressedJump) * ( basis * Vector3(0,2,-1).normalized() ) #basis.y.normalized()
+	F_gravity = MASS[cycle_species] * get_gravity()
+	F_jump = JUMP_STRENGTH[cycle_species] * float(pressedJump) * ( basis * Vector3(0,2,-1).normalized() ) #basis.y.normalized()
 	
 	# Flight forces
-	var vel_across_wingL: Vector3 = velocity.dot(-wingL.basis.z) * wingL.basis.z
-	var vel_across_wingR: Vector3 = velocity.dot(-wingR.basis.z) * wingR.basis.z
-	var vel_across_tail: Vector3 = velocity.dot(-tail.basis.z) * tail.basis.z
+	var aoa_wingL: float = velocity.angle_to(-wingL.basis.z)
+	var vel_across_wingL: float = velocity.dot(-wingL.basis.z)
 	
-	var C_L: float = 1.6
-	var C_D: float = 0.2
-	F_liftLeft = wingL.basis.y * rho * 0.5 * vel_across_wingL.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftRght = wingR.basis.y * rho * 0.5 * vel_across_wingR.length_squared() * C_L * ONE_WINGED_AREA
-	F_liftTail = tail.basis.y * rho * 0.5 * vel_across_tail.length_squared() * C_L * TAIL_AREA
+	var aoa_wingR: float = velocity.angle_to(-wingR.basis.z)
+	var vel_across_wingR: float = velocity.dot(-wingR.basis.z)
+	
+	var aoa_tail: float = velocity.angle_to(-tail.basis.z)
+	var vel_across_tail: float = velocity.dot(-tail.basis.z)
+	
+	#var vel_across_wingL: Vector3 = velocity.dot(-wingL.basis.z) * wingL.basis.z
+	#var vel_across_wingR: Vector3 = velocity.dot(-wingR.basis.z) * wingR.basis.z
+	#var vel_across_tail: Vector3 = velocity.dot(-tail.basis.z) * tail.basis.z
+	
+	#var C_L: float = 1.6
+	var C_N_left: float = curve_aoa_cn.sample(aoa_wingL/PI)
+	var C_N_right: float = curve_aoa_cn.sample(aoa_wingR/PI)
+	var C_N_tail: float = curve_aoa_cn.sample(aoa_tail/PI)
+	
+	#var C_D: float = 0.2
+	var C_A_left: float = curve_aoa_ca.sample(aoa_wingL/PI)
+	var C_A_right: float = curve_aoa_ca.sample(aoa_wingR/PI)
+	var C_A_tail: float = curve_aoa_ca.sample(aoa_tail/PI)
+	
+	F_liftLeft = wingL.basis.y * rho * 0.5 * vel_across_wingL**2 * C_N_left * ONE_WINGED_AREA[cycle_species]
+	F_liftRght = wingR.basis.y * rho * 0.5 * vel_across_wingR**2 * C_N_right * ONE_WINGED_AREA[cycle_species]
+	F_liftTail = tail.basis.y * rho * 0.5 * vel_across_tail**2 * C_N_tail * TAIL_AREA
 
-	F_dragLeft = wingL.basis.z * rho * 0.5 * vel_across_wingL.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragRght = wingR.basis.z * rho * 0.5 * vel_across_wingR.length_squared() * C_D * ONE_WINGED_AREA
-	F_dragTail = tail.basis.z * rho * 0.5 * vel_across_tail.length_squared() * C_D * TAIL_AREA
+	F_dragLeft = wingL.basis.z * rho * 0.5 * vel_across_wingL**2 * C_A_left * ONE_WINGED_AREA[cycle_species]
+	F_dragRght = wingR.basis.z * rho * 0.5 * vel_across_wingR**2 * C_A_right * ONE_WINGED_AREA[cycle_species]
+	F_dragTail = tail.basis.z * rho * 0.5 * vel_across_tail**2 * C_A_tail * TAIL_AREA
 	
 	F_Left = F_liftLeft + F_dragLeft
 	F_Rght = F_liftRght + F_dragRght
@@ -263,13 +298,15 @@ func _physics_process(dt: float) -> void:
 		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [wingL.position, wingR.position, tail.position]) # Make sure the two input arrays are the same length!
 		torque = torque_input + torque_aero + torque_drag
 	
-	wingR.rotate_x(input_up_down/(2*TAU))
+	wingR.rotate_x(input_up_down/(8*TAU))
+	wingR.rotation.x = clampf(wingR.rotation.x, -PI/12, PI/3)
 	#wingL.rotate_x(-inputWS/TAU)
-	wingL.rotate_x(input_up_down/(2*TAU))
+	wingL.rotate_x(input_up_down/(8*TAU))
+	wingL.rotation.x = clampf(wingL.rotation.x, -PI/12, PI/3)
 	
 	
 	### Process player movement
-	acceleration = 1/MASS * ( F_gravity + F_run + F_run_friction + F_jump + F_aero )
+	acceleration = 1/MASS[cycle_species] * ( F_gravity + F_run + F_run_friction + F_jump + F_aero )
 	velocity += acceleration * dt
 	
 	alpha = I.inverse() * torque
@@ -291,7 +328,7 @@ func _physics_process(dt: float) -> void:
 	## Drive label text
 	if is_debug_text_enabled:
 		label.visible = true
-		label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4) + str('\nvel_across_wingL: ') + String.num(vel_across_wingL.length(), 4)
+		label.text = str('vx: ') + String.num(velocity.x,3) + str(' vy: ') + String.num(velocity.y,3) + str(' vz: ') + String.num(velocity.z,3) + str('\nv: ') + String.num(velocity.length(), 4) + str('\na: ') + String.num(acceleration.length(), 4) + str('\nvel_across_wingL: ') + String.num(vel_across_wingL, 4)
 		label.font_size = 36
 		label.pixel_size = 0.001
 	else:
@@ -326,7 +363,7 @@ func _physics_process(dt: float) -> void:
 	
 			# Velocity
 			DebugDraw3D.draw_arrow_ray(position, velocity, velocity.length(), Color.ORANGE, false)
-			DebugDraw3D.draw_arrow_ray(position, vel_across_wingL, vel_across_wingL.length(), Color.HOT_PINK, false)
+			DebugDraw3D.draw_arrow_ray(position, vel_across_wingL*basis.z, vel_across_wingL, Color.HOT_PINK, false)
 	
 			# Wing forces
 			DebugDraw3D.draw_arrow_ray(wingL.global_position, F_liftLeft, F_liftLeft.length(), Color.WHITE, false)
