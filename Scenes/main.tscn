@@ -3,15 +3,13 @@
 [ext_resource type="Script" uid="uid://bmkytjo4gs7t6" path="res://Scripts/main.gd" id="1_8gbba"]
 [ext_resource type="Texture2D" uid="uid://bjdt6t8vmehri" path="res://Assets/icon.svg" id="1_jjgbg"]
 [ext_resource type="PackedScene" uid="uid://eng3lbdany3g" path="res://Scenes/player.tscn" id="2_bo1nx"]
+[ext_resource type="Shader" uid="uid://i3lt1ombh85m" path="res://Shaders/main_sky.gdshader" id="2_jjvhh"]
 
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7dm0k"]
-sky_top_color = Color(0.2574, 0.5504399, 0.99, 1)
-sky_horizon_color = Color(0.37259996, 0.49426997, 0.69, 1)
-ground_bottom_color = Color(0.13676184, 0.3114434, 0.16040564, 1)
-ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8gbba"]
+shader = ExtResource("2_jjvhh")
 
 [sub_resource type="Sky" id="Sky_ig7tw"]
-sky_material = SubResource("ProceduralSkyMaterial_7dm0k")
+sky_material = SubResource("ShaderMaterial_8gbba")
 
 [sub_resource type="Environment" id="Environment_0xm2m"]
 background_mode = 2

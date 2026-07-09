@@ -3,7 +3,7 @@ extends Node3D
 @onready var player: CharacterBody3D = $player
 @onready var ground: CSGBox3D = $ground
 
-var chunk_size: float = 80.0
+var chunk_size: float = 800.0
 var view_Xpos: bool = true
 var view_Ypos: bool = true
 
@@ -17,7 +17,6 @@ func _ready() -> void:
 
 
 func _process(_dt: float) -> void:
-	
 	
 	# Calculates which quadrant of the world our head is facing
 	match floor( fmod(player.head.rotation.y+PI/4, TAU) * (2/PI) ):

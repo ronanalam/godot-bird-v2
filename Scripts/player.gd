@@ -28,7 +28,7 @@ const camera_arm_step: float = 0.25
 var inMenu: bool = false
 var is_debug_text_enabled: bool = false
 var cycle_debug_arrows: int = 2
-var cycle_species: int = 1
+var cycle_species: int = 0
 
 
 ### Lerp Parameters
@@ -39,6 +39,8 @@ const BODY_LERP: float = 6.0
 
 ### Physics constants
 const JUMP_STRENGTH: Array[float] = [150.0, 750.0]
+const JUMPING_STRENGTH: Array[float] = [20.0, 150.0]
+const JUMPING_FREQUENCY: Array[float] = [2.0, 2.0]
 const beta: float = 0.1
 @onready var curve_aoa_cn = preload("res://Assets/curve_aoa_cn.tres")
 @onready var curve_aoa_ca = preload("res://Assets/curve_aoa_ca.tres")
@@ -59,6 +61,7 @@ var F_gravity: Vector3
 var F_run: Vector3
 var F_run_friction: Vector3
 var F_jump: Vector3
+var F_jumping: Vector3
 # Flight
 var F_liftLeft: Vector3
 var F_liftRght: Vector3
@@ -96,6 +99,9 @@ var inputAD: float
 var direction: Vector3
 
 var input_up_down: float
+
+var pressING_jump: float
+var t_last_pressed_jump: float
 
 
 
@@ -164,9 +170,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 ### Species selection
 func init_species( _species: int ) -> int:
 	# Set appropriate model offsets
-	wingL.position = WINGL_POSITION[_species]
-	wingR.position = WINGR_POSITION[_species]
-	tail.position = TAIL_POSITION[_species]
+	wingL.position = basis * WINGL_POSITION[_species]
+	wingR.position = basis * WINGR_POSITION[_species]
+	tail.position = basis * TAIL_POSITION[_species]
 	
 	match _species:
 		0:
@@ -201,6 +207,8 @@ func init_species( _species: int ) -> int:
 
 
 func _physics_process(dt: float) -> void:
+	#var t: float = Time.get_ticks_msec()/1000.
+	
 	
 	### Camera Movement
 	camera_arm_endpoint.translate_object_local( Vector3.BACK * camera_arm.spring_length )
@@ -216,6 +224,9 @@ func _physics_process(dt: float) -> void:
 	inputWS = Input.get_axis('back', 'forward')
 	inputAD = Input.get_axis('left', 'right')
 	pressedJump = Input.is_action_just_pressed('jump')
+	#if pressedJump=1:
+		
+	pressING_jump = Input.get_action_strength("jump")
 	direction = Vector3(input2D.x, 0, input2D.y).normalized()
 	
 	input_up_down = Input.get_axis('pitch_wingR_down', 'pitch_wingR_up')
@@ -224,17 +235,23 @@ func _physics_process(dt: float) -> void:
 	
 	### Determine forces
 	F_gravity = MASS[cycle_species] * get_gravity()
-	F_jump = JUMP_STRENGTH[cycle_species] * float(pressedJump) * ( basis * Vector3(0,2,-1).normalized() ) #basis.y.normalized()
+	#F_jump    = JUMP_STRENGTH[cycle_species] * float(pressedJump) * ( basis * Vector3(0,2,-1).normalized() ) #basis.y.normalized()
+	F_jumping = JUMPING_STRENGTH[cycle_species] * pressING_jump * ( wingR.basis.y ) * exp(-fmod(t_last_pressed_jump*JUMPING_FREQUENCY[cycle_species],1)/0.5)#JUMPING_STRENGTH[cycle_species] * pressING_jump * ( basis * Vector3(0,2,-1).normalized() ) * exp(-fmod(t,1))
+	if pressedJump:
+		print("\nPressed [Space]!")
+		t_last_pressed_jump = 0.0
+	if pressING_jump != 0:
+		t_last_pressed_jump += dt
 	
 	# Flight forces
-	var aoa_wingL: float = velocity.angle_to(-wingL.basis.z)
-	var vel_across_wingL: float = velocity.dot(-wingL.basis.z)
+	var aoa_wingL: float = velocity.angle_to(-wingL.global_basis.z)
+	var vel_across_wingL: float = velocity.dot(-wingL.global_basis.z)
 	
-	var aoa_wingR: float = velocity.angle_to(-wingR.basis.z)
-	var vel_across_wingR: float = velocity.dot(-wingR.basis.z)
+	var aoa_wingR: float = velocity.angle_to(-wingR.global_basis.z)
+	var vel_across_wingR: float = velocity.dot(-wingR.global_basis.z)
 	
-	var aoa_tail: float = velocity.angle_to(-tail.basis.z)
-	var vel_across_tail: float = velocity.dot(-tail.basis.z)
+	var aoa_tail: float = velocity.angle_to(-tail.global_basis.z)
+	var vel_across_tail: float = velocity.dot(-tail.global_basis.z)
 	
 	#var vel_across_wingL: Vector3 = velocity.dot(-wingL.basis.z) * wingL.basis.z
 	#var vel_across_wingR: Vector3 = velocity.dot(-wingR.basis.z) * wingR.basis.z
@@ -250,13 +267,13 @@ func _physics_process(dt: float) -> void:
 	var C_A_right: float = curve_aoa_ca.sample(aoa_wingR/PI)
 	var C_A_tail: float = curve_aoa_ca.sample(aoa_tail/PI)
 	
-	F_liftLeft = wingL.basis.y * rho * 0.5 * vel_across_wingL**2 * C_N_left * ONE_WINGED_AREA[cycle_species]
-	F_liftRght = wingR.basis.y * rho * 0.5 * vel_across_wingR**2 * C_N_right * ONE_WINGED_AREA[cycle_species]
-	F_liftTail = tail.basis.y * rho * 0.5 * vel_across_tail**2 * C_N_tail * TAIL_AREA
+	F_liftLeft = wingL.global_basis.y * rho * 0.5 * vel_across_wingL**2 * C_N_left * ONE_WINGED_AREA[cycle_species]
+	F_liftRght = wingR.global_basis.y * rho * 0.5 * vel_across_wingR**2 * C_N_right * ONE_WINGED_AREA[cycle_species]
+	F_liftTail = tail.global_basis.y * rho * 0.5 * vel_across_tail**2 * C_N_tail * TAIL_AREA
 
-	F_dragLeft = wingL.basis.z * rho * 0.5 * vel_across_wingL**2 * C_A_left * ONE_WINGED_AREA[cycle_species]
-	F_dragRght = wingR.basis.z * rho * 0.5 * vel_across_wingR**2 * C_A_right * ONE_WINGED_AREA[cycle_species]
-	F_dragTail = tail.basis.z * rho * 0.5 * vel_across_tail**2 * C_A_tail * TAIL_AREA
+	F_dragLeft = wingL.global_basis.z * rho * 0.5 * vel_across_wingL**2 * C_A_left * ONE_WINGED_AREA[cycle_species]
+	F_dragRght = wingR.global_basis.z * rho * 0.5 * vel_across_wingR**2 * C_A_right * ONE_WINGED_AREA[cycle_species]
+	F_dragTail = tail.global_basis.z * rho * 0.5 * vel_across_tail**2 * C_A_tail * TAIL_AREA
 	
 	F_Left = F_liftLeft + F_dragLeft
 	F_Rght = F_liftRght + F_dragRght
@@ -295,7 +312,7 @@ func _physics_process(dt: float) -> void:
 		
 		torque_input = -Vector3(inputWS, inputQE, inputAD) * basis.inverse()
 		torque_drag += (-0.2)*torque
-		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [wingL.position, wingR.position, tail.position]) # Make sure the two input arrays are the same length!
+		torque_aero = torque_from_forces([F_Left, F_Rght, F_Tail], [basis * wingL.position, basis * wingR.position, basis * tail.position]) # Make sure the two input arrays are the same length!
 		torque = torque_input + torque_aero + torque_drag
 	
 	wingR.rotate_x(input_up_down/(8*TAU))
@@ -306,7 +323,7 @@ func _physics_process(dt: float) -> void:
 	
 	
 	### Process player movement
-	acceleration = 1/MASS[cycle_species] * ( F_gravity + F_run + F_run_friction + F_jump + F_aero )
+	acceleration = 1/MASS[cycle_species] * ( F_gravity + F_run + F_run_friction + F_jump + F_jumping + F_aero )
 	velocity += acceleration * dt
 	
 	alpha = I.inverse() * torque
@@ -335,7 +352,7 @@ func _physics_process(dt: float) -> void:
 		label.visible = false
 		
 	# Label_keybinds shows the current keybinds as text on the screen
-	label_keybinds.text = str("Toggle debug text:  "+"[T]\n"+"Cycle debug arrows:  "+"[G]\n"+"Cycle thru species:  "+"[Q]")
+	label_keybinds.text = str("Toggle debug text:  "+"[T]\n"+"Cycle debug arrows:  "+"[G]\n"+"Cycle thru species:  "+"[K]")
 	label_keybinds.font_size = 36
 	label_keybinds.pixel_size = 0.001
 	label_keybinds.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
@@ -357,6 +374,10 @@ func _physics_process(dt: float) -> void:
 			DebugDraw3D.draw_arrow_ray(position, basis.x, 0.2, Color.RED, false)
 			DebugDraw3D.draw_arrow_ray(position, basis.y, 0.2, Color.GREEN, false)
 			DebugDraw3D.draw_arrow_ray(position, basis.z, 0.2, Color.BLUE, false)
+			# WingL basis
+			DebugDraw3D.draw_arrow_ray(wingL.global_position, wingL.global_basis.x, 0.2, Color.RED, false)
+			DebugDraw3D.draw_arrow_ray(wingL.global_position, wingL.global_basis.y, 0.2, Color.GREEN, false)
+			DebugDraw3D.draw_arrow_ray(wingL.global_position, wingL.global_basis.z, 0.2, Color.BLUE, false)
 	
 			# Input/run direction (Vec3 direction)
 			DebugDraw3D.draw_arrow_ray(position, direction, 0.5, Color.BLACK, false)
