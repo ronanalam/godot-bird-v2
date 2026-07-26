@@ -17,5 +17,5 @@ void sky() {
 	//float blu_g = dot(EYEDIR, vec3(0,-1,0));
 	
 	//COLOR = 1.*vec3( red_s, grn_s, blu_s ) + 0.0*vec3( red_g, grn_g, blu_g );
-	COLOR = vec3( 0.1, 0.2*sign(-phi), phi );
+	COLOR = vec3( sin(8.*theta)*sign(-phi), 0.2, sign(phi) );
 }

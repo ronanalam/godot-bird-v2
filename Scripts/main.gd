@@ -3,7 +3,7 @@ extends Node3D
 @onready var player: CharacterBody3D = $player
 @onready var ground: CSGBox3D = $ground
 
-var chunk_size: float = 800.0
+#var chunk_size: float = 800.0
 var view_Xpos: bool = true
 var view_Ypos: bool = true
 
@@ -39,18 +39,25 @@ func _process(_dt: float) -> void:
 	
 
 
+var time_since_last_update: float
 
 # Called every frame. 'dt' is the elapsed time since the previous frame.
 func _physics_process(_dt: float) -> void:
+	const time_between_world_updates: float = 1.0 # seconds
+	time_since_last_update += _dt
 	
-	var current_chunk: Vector3 = (player.position/chunk_size).floor()
-	var _render_radius: float = 80.
+	if time_since_last_update > time_between_world_updates:
+		update_world()
+		time_since_last_update = 0.
 	
-	var _r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
-									fmod(player.position.y, chunk_size), 
-									fmod(player.position.z, chunk_size));
-	
-	ground.position = (current_chunk + 0.5*Vector3.ONE) * chunk_size
+	#var current_chunk: Vector3 = (player.position/chunk_size).floor()
+	#var _render_radius: float = 80.
+	#
+	#var _r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
+									#fmod(player.position.y, chunk_size), 
+									#fmod(player.position.z, chunk_size));
+	#
+	#ground.position = (current_chunk + 0.5*Vector3.ONE) * chunk_size
 	
 	#if = floor(player.position)/16:
 		#pass;
@@ -64,3 +71,7 @@ func _physics_process(_dt: float) -> void:
 		#ground.set_position( Vector3(ground.position.x, 
 									#ground.position.y, 
 									#player.position.z + ground.size.y/2) )
+
+func update_world() -> void:
+	var _r: Vector3 = player.position
+	print("Updated world!")

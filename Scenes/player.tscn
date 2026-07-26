@@ -14,7 +14,6 @@ script = ExtResource("1_v0iea")
 
 [node name="head" type="Node3D" parent="." unique_id=1400448903]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, -0.05)
-top_level = true
 
 [node name="label" type="Label3D" parent="head" unique_id=1582048114]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.4)
