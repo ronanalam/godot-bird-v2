@@ -48,9 +48,15 @@ func _physics_process(_dt: float) -> void:
 	
 	if time_since_last_update > time_between_world_updates:
 		update_world()
-		time_since_last_update = 0.
+		time_since_last_update = 0.0
 	
-	#var current_chunk: Vector3 = (player.position/chunk_size).floor()
+	var chunk_size: float = 10.0
+	var current_chunk: Vector3 = (player.position/chunk_size).floor()
+
+	print("current_chunk = "+"{current_chunk.x}")
+	
+	
+	
 	#var _render_radius: float = 80.
 	#
 	#var _r_mod_chunk: Vector3 = Vector3(fmod(player.position.x, chunk_size), 
