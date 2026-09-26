@@ -43,7 +43,7 @@ var time_since_last_update: float
 
 # Called every frame. 'dt' is the elapsed time since the previous frame.
 func _physics_process(_dt: float) -> void:
-	const time_between_world_updates: float = 1.0 # seconds
+	const time_between_world_updates: float = 10.0 # seconds
 	time_since_last_update += _dt
 	
 	if time_since_last_update > time_between_world_updates:
@@ -53,7 +53,7 @@ func _physics_process(_dt: float) -> void:
 	var chunk_size: float = 10.0
 	var current_chunk: Vector3 = (player.position/chunk_size).floor()
 
-	print("current_chunk = "+"{current_chunk.x}")
+	#print("current_chunk = "+"{current_chunk.x}")
 	
 	
 	
@@ -78,6 +78,8 @@ func _physics_process(_dt: float) -> void:
 									#ground.position.y, 
 									#player.position.z + ground.size.y/2) )
 
+
+
 func update_world() -> void:
 	var _r: Vector3 = player.position
-	print("Updated world!")
+	print("Updated world!\nTime: "+Time.get_time_string_from_system())

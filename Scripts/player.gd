@@ -163,7 +163,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			cycle_debug_arrows += 1
 			cycle_debug_arrows = cycle_debug_arrows % 3
 	
-	### Handle hotkey to cycle species
+	### Handle hotkey [] to cycle species
 	if event.is_action_pressed("cycle_species"):
 		if inMenu:
 			pass
@@ -171,6 +171,15 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			cycle_species += 1
 			cycle_species = cycle_species % 2
 			init_species( cycle_species )
+	
+	### Handle hotkey [R] to reset position & velocity
+	if event.is_action_pressed("reset"):
+		if inMenu:
+			pass
+		else:
+			position = Vector3(0,1,0)
+			velocity = Vector3.ZERO
+			quaternion = Quaternion.IDENTITY
 
 
 
@@ -297,7 +306,7 @@ func _physics_process(dt: float) -> void:
 		# Rotate WASD axis w/ camera
 		direction = direction.rotated(Vector3.UP, head.global_rotation.y)
 		# Set run forces
-		F_run = 9 * direction * quaternion.inverse()
+		F_run = 9 * direction #* quaternion.inverse()
 		F_run_friction = -5 * velocity
 		# Set torques/rotations to zero
 		# FINISHED TODO: IF YOU LAND WHILE HOLDING TORQUE YOU WILL SPIN THE OPPOSITE WAY WHEN YOU NEXT TAKE TO THE AIR
@@ -308,7 +317,7 @@ func _physics_process(dt: float) -> void:
 		alpha = Vector3.ZERO
 		ω = Vector3.ZERO
 		if direction:
-			quaternion = Quaternion.IDENTITY
+			quaternion = Quaternion( Vector3.UP, head.global_rotation.y ) * Quaternion.IDENTITY
 	
 	
 	
@@ -336,9 +345,9 @@ func _physics_process(dt: float) -> void:
 	wingL.rotate_x(input_WS/(2*TAU))
 	wingL.rotation.x = clampf(wingL.rotation.x, -PI/12, PI/3)
 	
-	wingR.rotate_x(input_AD/(2*TAU))
+	wingR.rotate_x(-input_AD/(2*TAU))
 	wingR.rotation.x = clampf(wingR.rotation.x, -PI/12, PI/3)
-	wingL.rotate_x(-input_AD/(2*TAU))
+	wingL.rotate_x(input_AD/(2*TAU))
 	wingL.rotation.x = clampf(wingL.rotation.x, -PI/12, PI/3)
 	
 	tail.rotate_x(input_UDarrow/(2*TAU))
