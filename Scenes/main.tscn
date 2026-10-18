@@ -7,9 +7,12 @@
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8gbba"]
 shader = ExtResource("2_jjvhh")
+shader_parameter/sun_dir = Vector3(0, 0, 0)
+shader_parameter/sun_disk_angle = 0.0
 
 [sub_resource type="Sky" id="Sky_ig7tw"]
 sky_material = SubResource("ShaderMaterial_8gbba")
+process_mode = 2
 
 [sub_resource type="Environment" id="Environment_0xm2m"]
 background_mode = 2
@@ -30,8 +33,8 @@ script = ExtResource("1_8gbba")
 environment = SubResource("Environment_0xm2m")
 
 [node name="sun" type="DirectionalLight3D" parent="." unique_id=1898909269]
-transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
 shadow_enabled = true
+shadow_blur = 0.5
 
 [node name="ground" type="CSGBox3D" parent="." unique_id=1291241128]
 use_collision = true
@@ -41,7 +44,8 @@ material = SubResource("StandardMaterial3D_bo1nx")
 [node name="player" parent="." unique_id=230490197 instance=ExtResource("2_bo1nx")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
-[node name="Area3D" type="Area3D" parent="." unique_id=1902284615]
+[node name="TargetBox" type="Area3D" parent="." unique_id=1902284615]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=1173844587]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TargetBox" unique_id=1173844587]
 shape = SubResource("BoxShape3D_8gbba")
+debug_color = Color(1, 0, 0.099999905, 1)

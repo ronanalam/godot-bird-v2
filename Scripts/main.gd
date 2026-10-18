@@ -2,6 +2,9 @@ extends Node3D
 
 @onready var player: CharacterBody3D = $player
 @onready var ground: CSGBox3D = $ground
+@onready var sun: DirectionalLight3D = $sun
+@onready var world_environment: WorldEnvironment = $WorldEnvironment
+@onready var target_box: Area3D = $TargetBox
 
 #var chunk_size: float = 800.0
 var view_Xpos: bool = true
@@ -11,13 +14,16 @@ var view_Ypos: bool = true
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	#print(ground.size)
-	pass # Replace with function body.
+	# Init sun to be on the eastern horizon
+	sun.basis = sun.basis.rotated(Vector3.UP, PI/2)
+	world_environment.environment.sky.sky_material.set_shader_parameter("sun_disk_angle", 3.0 )
+	
+	# Init box to (0,2,0)
+	target_box.position = 2*Vector3.UP
 
 
 
 func _process(_dt: float) -> void:
-	
 	# Calculates which quadrant of the world our head is facing
 	match floor( fmod(player.head.rotation.y+PI/4, TAU) * (2/PI) ):
 		0.: # Quadrant I
@@ -40,18 +46,27 @@ func _process(_dt: float) -> void:
 
 
 var time_since_last_update: float
+var target_box_hits: int = 0
 
 # Called every frame. 'dt' is the elapsed time since the previous frame.
 func _physics_process(_dt: float) -> void:
-	const time_between_world_updates: float = 10.0 # seconds
+	
+	const time_between_world_updates: float = 0.1 # seconds
+	
 	time_since_last_update += _dt
 	
 	if time_since_last_update > time_between_world_updates:
-		update_world()
+		update_world(time_between_world_updates)
 		time_since_last_update = 0.0
 	
+	# Handle target_box stuff
+	if target_box.has_overlapping_bodies():
+		target_box.position = random_box_position()
+		target_box_hits += 1
+		
+	
 	var chunk_size: float = 10.0
-	var current_chunk: Vector3 = (player.position/chunk_size).floor()
+	var _current_chunk: Vector3 = (player.position/chunk_size).floor()
 
 	#print("current_chunk = "+"{current_chunk.x}")
 	
@@ -80,6 +95,21 @@ func _physics_process(_dt: float) -> void:
 
 
 
-func update_world() -> void:
+func update_world(delta_t: float) -> void:
 	var _r: Vector3 = player.position
-	print("Updated world!\nTime: "+Time.get_time_string_from_system())
+	var time_multiplier: float = 3600.
+	
+	# Update sun direction
+	#sun.rotate(global_basis.z, Time.get_datetime_dict_from_system()["second"])
+	sun.quaternion = Quaternion( -sun.basis.x, TAU * delta_t * time_multiplier/(24.*3600.) ) * sun.quaternion
+	world_environment.environment.sky.sky_material.set_shader_parameter("sun_dir", sun.basis.z.normalized() )
+	
+	
+	print("Updated world!")
+	print( "sun.basis.z = " + String.num(sun.basis.z.x, 2) +" "+ String.num(sun.basis.z.y, 2) +" "+ String.num(sun.basis.z.z, 2) )
+	print(Time.get_datetime_string_from_system()+"\n")
+
+
+
+func random_box_position() -> Vector3:
+	return Vector3(randf_range(-10,10),randf_range(1,20),randf_range(-10,10))
