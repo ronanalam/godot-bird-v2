@@ -16,10 +16,12 @@ void sky() {
 	float theta = ( atan(EYEDIR.z,-EYEDIR.x) + PI )/2.;
 	float phi = asin(EYEDIR.y);
 	
-	rgb.b = dot(EYEDIR,sun_dir);
+	rgb.r = 0.2 * exp(-pow(EYEDIR.y/0.25,2.));
+	rgb.g = 0.4 * exp(-pow(EYEDIR.y/0.75,2.));
+	rgb.b = 1. - 0.2*exp(-pow(EYEDIR.y/0.95,2.));
 	
 	if ( acos(dot(EYEDIR,sun_dir)) < sun_disk_angle*(PI/180.) ) {
-		rgb = vec3(5.0);
+		rgb = vec3(20.0,20.0,1.0);
 	}
 	
 	COLOR = rgb;

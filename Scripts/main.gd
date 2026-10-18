@@ -51,7 +51,7 @@ var target_box_hits: int = 0
 # Called every frame. 'dt' is the elapsed time since the previous frame.
 func _physics_process(_dt: float) -> void:
 	
-	const time_between_world_updates: float = 0.1 # seconds
+	const time_between_world_updates: float = 0.25 # seconds
 	
 	time_since_last_update += _dt
 	
@@ -97,7 +97,7 @@ func _physics_process(_dt: float) -> void:
 
 func update_world(delta_t: float) -> void:
 	var _r: Vector3 = player.position
-	var time_multiplier: float = 3600.
+	var time_multiplier: float = 25.
 	
 	# Update sun direction
 	#sun.rotate(global_basis.z, Time.get_datetime_dict_from_system()["second"])
@@ -105,9 +105,9 @@ func update_world(delta_t: float) -> void:
 	world_environment.environment.sky.sky_material.set_shader_parameter("sun_dir", sun.basis.z.normalized() )
 	
 	
-	print("Updated world!")
-	print( "sun.basis.z = " + String.num(sun.basis.z.x, 2) +" "+ String.num(sun.basis.z.y, 2) +" "+ String.num(sun.basis.z.z, 2) )
-	print(Time.get_datetime_string_from_system()+"\n")
+	#print("Updated world!")
+	#print( "sun.basis.z = " + String.num(sun.basis.z.x, 2) +" "+ String.num(sun.basis.z.y, 2) +" "+ String.num(sun.basis.z.z, 2) )
+	#print(Time.get_datetime_string_from_system()+"\n")
 
 
 
