@@ -1,0 +1,43 @@
+Asymmetric multiplayer (two teams)
+Smaller team plays as photographers, the larger team plays as birds
+Team sizes = (N photographers, M birds) [N=2? M=10?]
+
+
+
+Photographers
+- WIN by capturing "good"[1] images of the birds
+- Confined to land movement
+- Tradeoffs in gear: zoom-FoV, exposure-acquisition time-blurriness-graininess?, movement speed-gear weight, depth of focus-something?
+- Should be stealthy w.r.t. the bird players
+- Slow photo acq time can be ruined by walking
+
+- Bino/camera differences? Player w/ bino loadout could support a player w/ camera loadout
+
+
+
+Birds
+- WIN by [evading photos?][completing tasks e.g. eating/bathing/dancing?]
+- Tradeoffs in species: Smaller/nimble/quick vs. larger/heavier/[smth positive]
+- Day/night cycle affects species unequally. Owls move better at night since they are awake and not sluggish, early birds, etc.
+
+theorycrafting
+- Bird player doesnt know if camera is slow, so do you run to make it blurry or stay still for camouflage?
+- 
+
+
+
+Map Design
+- Specific stages, a la Dead by Daylight/PUBG/Meccha Chameleon?
+-- In that case: Forest (snowy), shoreline, urban big city, cliffside/gully, 
+
+- Specific times of day? So dawn, afternoon, twilight, midnight (rare)
+-- Menu: Have a grid (matrix) of stages x times; color in which ones are enabled for matchmaking
+
+
+Game Design (Flowchart of actions)
+- Main menu -> Start game
+- Matchmaking and assignment of clients to teams
+- GAME START: Stage and time announce (forest afternoon) -> Bird team picks their species (hidden from photographers) while PGs pick loadouts (hidden from birds) -> Load into map
+
+
+- 
